@@ -19,6 +19,8 @@ package resource
 import (
 	"testing"
 
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource/fake"
+
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,11 +52,11 @@ func TestAddClaim(t *testing.T) {
 			queue: addFn(func(_ interface{}) { t.Errorf("queue.Add() called unexpectedly") }),
 		},
 		"ObjectHasNilClaimReference": {
-			obj:   &MockManaged{},
+			obj:   &fake.MockManaged{},
 			queue: addFn(func(_ interface{}) { t.Errorf("queue.Add() called unexpectedly") }),
 		},
 		"ObjectHasClaimReference": {
-			obj: &MockManaged{MockClaimReferencer: MockClaimReferencer{Ref: &corev1.ObjectReference{
+			obj: &fake.MockManaged{MockClaimReferencer: fake.MockClaimReferencer{Ref: &corev1.ObjectReference{
 				Namespace: ns,
 				Name:      name,
 			}}},
@@ -84,19 +86,19 @@ func TestAddPropagator(t *testing.T) {
 			queue: addFn(func(_ interface{}) { t.Errorf("queue.Add() called unexpectedly") }),
 		},
 		"ObjectMissing" + AnnotationKeyPropagateFromNamespace: {
-			obj: &MockManaged{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+			obj: &fake.MockManaged{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
 				AnnotationKeyPropagateFromName: name,
 			}}},
 			queue: addFn(func(_ interface{}) { t.Errorf("queue.Add() called unexpectedly") }),
 		},
 		"ObjectMissing" + AnnotationKeyPropagateFromName: {
-			obj: &MockManaged{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+			obj: &fake.MockManaged{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
 				AnnotationKeyPropagateFromNamespace: ns,
 			}}},
 			queue: addFn(func(_ interface{}) { t.Errorf("queue.Add() called unexpectedly") }),
 		},
 		"IsPropagatedObject": {
-			obj: &MockManaged{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+			obj: &fake.MockManaged{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
 				AnnotationKeyPropagateFromNamespace: ns,
 				AnnotationKeyPropagateFromName:      name,
 			}}},

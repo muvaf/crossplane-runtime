@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/crossplaneio/crossplane-runtime/pkg/resource/fake"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -61,65 +63,65 @@ func TestClaimDefaultingReconciler(t *testing.T) {
 	}{
 		"GetClaimError": {
 			args: args{
-				m: &MockManager{
-					c: &test.MockClient{MockGet: test.NewMockGetFn(errBoom)},
-					s: MockSchemeWith(&MockClaim{}),
+				m: &fake.MockManager{
+					Client: &test.MockClient{MockGet: test.NewMockGetFn(errBoom)},
+					Scheme: fake.MockSchemeWith(&fake.MockClaim{}),
 				},
-				of: ClaimKind(MockGVK(&MockClaim{})),
-				to: ClassKind(MockGVK(&MockClass{})),
+				of: ClaimKind(fake.MockGVK(&fake.MockClaim{})),
+				to: ClassKind(fake.MockGVK(&fake.MockClass{})),
 			},
 			want: want{err: errors.Wrap(errBoom, errGetClaim)},
 		},
 		"ClaimNotFound": {
 			args: args{
-				m: &MockManager{
-					c: &test.MockClient{MockGet: test.NewMockGetFn(kerrors.NewNotFound(schema.GroupResource{}, ""))},
-					s: MockSchemeWith(&MockClaim{}),
+				m: &fake.MockManager{
+					Client: &test.MockClient{MockGet: test.NewMockGetFn(kerrors.NewNotFound(schema.GroupResource{}, ""))},
+					Scheme: fake.MockSchemeWith(&fake.MockClaim{}),
 				},
-				of: ClaimKind(MockGVK(&MockClaim{})),
-				to: ClassKind(MockGVK(&MockClass{})),
+				of: ClaimKind(fake.MockGVK(&fake.MockClaim{})),
+				to: ClassKind(fake.MockGVK(&fake.MockClass{})),
 			},
 			want: want{result: reconcile.Result{}},
 		},
 		"ClaimHasClassRef": {
 			args: args{
-				m: &MockManager{
-					c: &test.MockClient{
+				m: &fake.MockManager{
+					Client: &test.MockClient{
 						MockGet: test.NewMockGetFn(nil, func(o runtime.Object) error {
-							c := o.(*MockClaim)
-							*c = MockClaim{MockClassReferencer: MockClassReferencer{Ref: &corev1.ObjectReference{}}}
+							c := o.(*fake.MockClaim)
+							*c = fake.MockClaim{MockClassReferencer: fake.MockClassReferencer{Ref: &corev1.ObjectReference{}}}
 							return nil
 						}),
 					},
-					s: MockSchemeWith(&MockClaim{}),
+					Scheme: fake.MockSchemeWith(&fake.MockClaim{}),
 				},
-				of: ClaimKind(MockGVK(&MockClaim{})),
-				to: ClassKind(MockGVK(&MockClass{})),
+				of: ClaimKind(fake.MockGVK(&fake.MockClaim{})),
+				to: ClassKind(fake.MockGVK(&fake.MockClass{})),
 			},
 			want: want{result: reconcile.Result{Requeue: false}},
 		},
 		"ListClassesError": {
 			args: args{
-				m: &MockManager{
-					c: &test.MockClient{
+				m: &fake.MockManager{
+					Client: &test.MockClient{
 						MockGet:  test.NewMockGetFn(nil),
 						MockList: test.NewMockListFn(errBoom),
 					},
-					s: MockSchemeWith(&MockClaim{}),
+					Scheme: fake.MockSchemeWith(&fake.MockClaim{}),
 				},
-				of: ClaimKind(MockGVK(&MockClaim{})),
-				to: ClassKind(MockGVK(&MockClass{})),
+				of: ClaimKind(fake.MockGVK(&fake.MockClaim{})),
+				to: ClassKind(fake.MockGVK(&fake.MockClass{})),
 			},
 			want: want{err: errors.Wrap(errBoom, errListClasses)},
 		},
 		"NoClassesAnnotatedDefault": {
 			args: args{
-				m: &MockManager{
-					c: &test.MockClient{
+				m: &fake.MockManager{
+					Client: &test.MockClient{
 						MockGet: test.NewMockGetFn(nil),
 						MockList: test.NewMockListFn(nil, func(o runtime.Object) error {
 							u := &unstructured.Unstructured{}
-							u.SetGroupVersionKind(MockGVK(&MockClass{}))
+							u.SetGroupVersionKind(fake.MockGVK(&fake.MockClass{}))
 							u.SetName(name)
 							u.SetUID(uid)
 							l := o.(*unstructured.UnstructuredList)
@@ -127,21 +129,21 @@ func TestClaimDefaultingReconciler(t *testing.T) {
 							return nil
 						}),
 					},
-					s: MockSchemeWith(&MockClaim{}),
+					Scheme: fake.MockSchemeWith(&fake.MockClaim{}),
 				},
-				of: ClaimKind(MockGVK(&MockClaim{})),
-				to: ClassKind(MockGVK(&MockClass{})),
+				of: ClaimKind(fake.MockGVK(&fake.MockClaim{})),
+				to: ClassKind(fake.MockGVK(&fake.MockClass{})),
 			},
 			want: want{result: reconcile.Result{RequeueAfter: aShortWait}},
 		},
 		"UpdateClaimError": {
 			args: args{
-				m: &MockManager{
-					c: &test.MockClient{
+				m: &fake.MockManager{
+					Client: &test.MockClient{
 						MockGet: test.NewMockGetFn(nil),
 						MockList: test.NewMockListFn(nil, func(o runtime.Object) error {
 							u := &unstructured.Unstructured{}
-							u.SetGroupVersionKind(MockGVK(&MockClass{}))
+							u.SetGroupVersionKind(fake.MockGVK(&fake.MockClass{}))
 							u.SetName(name)
 							u.SetUID(uid)
 							u.SetAnnotations(map[string]string{v1alpha1.AnnotationDefaultClassKey: v1alpha1.AnnotationDefaultClassValue})
@@ -151,21 +153,21 @@ func TestClaimDefaultingReconciler(t *testing.T) {
 						}),
 						MockUpdate: test.NewMockUpdateFn(errBoom),
 					},
-					s: MockSchemeWith(&MockClaim{}),
+					Scheme: fake.MockSchemeWith(&fake.MockClaim{}),
 				},
-				of: ClaimKind(MockGVK(&MockClaim{})),
-				to: ClassKind(MockGVK(&MockClass{})),
+				of: ClaimKind(fake.MockGVK(&fake.MockClaim{})),
+				to: ClassKind(fake.MockGVK(&fake.MockClass{})),
 			},
 			want: want{err: errors.Wrap(errBoom, errUpdateClaim)},
 		},
 		"Successful": {
 			args: args{
-				m: &MockManager{
-					c: &test.MockClient{
+				m: &fake.MockManager{
+					Client: &test.MockClient{
 						MockGet: test.NewMockGetFn(nil),
 						MockList: test.NewMockListFn(nil, func(o runtime.Object) error {
 							u := &unstructured.Unstructured{}
-							u.SetGroupVersionKind(MockGVK(&MockClass{}))
+							u.SetGroupVersionKind(fake.MockGVK(&fake.MockClass{}))
 							u.SetName(name)
 							u.SetUID(uid)
 							u.SetAnnotations(map[string]string{v1alpha1.AnnotationDefaultClassKey: v1alpha1.AnnotationDefaultClassValue})
@@ -174,10 +176,10 @@ func TestClaimDefaultingReconciler(t *testing.T) {
 							return nil
 						}),
 						MockUpdate: test.NewMockUpdateFn(nil, func(got runtime.Object) error {
-							want := &MockClaim{}
+							want := &fake.MockClaim{}
 							want.SetClassReference(&corev1.ObjectReference{
-								APIVersion: MockGVK(&MockClass{}).GroupVersion().String(),
-								Kind:       MockGVK(&MockClass{}).Kind,
+								APIVersion: fake.MockGVK(&fake.MockClass{}).GroupVersion().String(),
+								Kind:       fake.MockGVK(&fake.MockClass{}).Kind,
 								Name:       name,
 								UID:        uid,
 							})
@@ -187,10 +189,10 @@ func TestClaimDefaultingReconciler(t *testing.T) {
 							return nil
 						}),
 					},
-					s: MockSchemeWith(&MockClaim{}),
+					Scheme: fake.MockSchemeWith(&fake.MockClaim{}),
 				},
-				of: ClaimKind(MockGVK(&MockClaim{})),
-				to: ClassKind(MockGVK(&MockClass{})),
+				of: ClaimKind(fake.MockGVK(&fake.MockClaim{})),
+				to: ClassKind(fake.MockGVK(&fake.MockClass{})),
 			},
 			want: want{result: reconcile.Result{Requeue: false}},
 		},
@@ -224,11 +226,11 @@ func TestClaimDefaultingReconcilerRandomness(t *testing.T) {
 		return *u
 	}
 
-	m := &MockManager{
-		c: &test.MockClient{
+	m := &fake.MockManager{
+		Client: &test.MockClient{
 			MockGet: test.NewMockGetFn(nil, func(o runtime.Object) error {
-				c := o.(*MockClaim)
-				*c = MockClaim{MockClassSelector: MockClassSelector{Sel: &metav1.LabelSelector{}}}
+				c := o.(*fake.MockClaim)
+				*c = fake.MockClaim{MockClassSelector: fake.MockClassSelector{Sel: &metav1.LabelSelector{}}}
 				return nil
 			}),
 			MockList: test.NewMockListFn(nil, func(o runtime.Object) error {
@@ -244,12 +246,12 @@ func TestClaimDefaultingReconcilerRandomness(t *testing.T) {
 				return nil
 			}),
 		},
-		s: MockSchemeWith(&MockClaim{}),
+		Scheme: fake.MockSchemeWith(&fake.MockClaim{}),
 	}
 
 	r := NewClaimDefaultingReconciler(m,
-		ClaimKind(MockGVK(&MockClaim{})),
-		ClassKind(MockGVK(&MockClass{})),
+		ClaimKind(fake.MockGVK(&fake.MockClaim{})),
+		ClassKind(fake.MockGVK(&fake.MockClass{})),
 		WithDefaultingJitterer(func() {}))
 
 	for i := 0; i < reconciles; i++ {
