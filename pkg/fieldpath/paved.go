@@ -350,6 +350,11 @@ func prepareField(object map[string]interface{}, current, next Segment) {
 
 // SetValue at the supplied field path.
 func (p *Paved) SetValue(path string, value interface{}) error {
+	// Setting a map key to nil creates that entry and that causes validation
+	// problems in api-server since nil is supposed to be omitted.
+	if value == nil {
+		return nil
+	}
 	segments, err := Parse(path)
 	if err != nil {
 		return errors.Wrapf(err, "cannot parse path %q", path)
